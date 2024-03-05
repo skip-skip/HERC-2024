@@ -2,7 +2,7 @@ addpath('./util');
 addpath('./MATS/');
 
 wl = 500; ol = 400; dtmax = 24;
-STRT_OFFSET = -60*20; %20 minutes
+STRT_OFFSET = -60*20; %20 minutes (acfilts is 100 samples/day)
 END_OFFSET = 60*20;
 
 event_catalog = importEventCatalog("event_stats.txt",10);
@@ -20,15 +20,14 @@ for d = event_dates
     disp('Finding mean correlation...');
     corrs_mean = (mean(corrs1, 3) + mean(corrs2, 3)) / 2;
 
-    %average corrs here
     events = event_catalog(year(event_catalog.DateTime) == year(d) & ...
                          month(event_catalog.DateTime) == month(d) & ...
                          day(event_catalog.DateTime) == day(d), :);
 
     for row = 1:height(events)
         e = events(row,:);
-        %       -plot start to start+hr or so
-        disp(['Displaying event at: ' datestr(e.DateTime)]);
+        event_string = datestr(e.DateTime)
+        disp(['Displaying event at: ' event_string]);
         frame_start = 3600*hour(e.DateTime) + 60*minute(e.DateTime) + STRT_OFFSET;
         frame_end = 3600*hour(e.DateTime) + 60*minute(e.DateTime) + END_OFFSET;
         if frame_start<1 
@@ -42,12 +41,18 @@ for d = event_dates
         corrs_mean_frame(corrs_mean_frame<cth) = 0;
 
         [frame_start, frame_end] = DisplayFrame(corrs_mean_frame, frame_start, frame_end)
-        LabelEvent()
-        %       -read input to adjust time range and plot
-        %       confirm time range:
-        %           -subset data
-        %           -save data in labeled folder
-        %           -save correlogram in extra folder
+        corrs_scale = wl-ol;
+        frame_start = frame_start*corrs_scale;
+        frame_end = frame_end*corrs_scale;
+        %Save here
+        filenames = {};
+        for i = 1:size(acfilts6, 2)
+            filename = [event_string(1:11) '_ev' num2str(row) '_' num2str(i)];
+            filenames{i} = filename;
+        end
+        
+        LabelEvent(acfilts6, filenames);
+
     end
 
     return
