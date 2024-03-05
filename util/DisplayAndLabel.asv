@@ -1,0 +1,102 @@
+function [frame_start,frame_end] = DisplayAndLabel(corrs,frame_start, frame_end)
+%DisplayAndLabel Displays a correlogram within a certain frame.
+%   The frame can be shifted left or right, and can be zoomed in or out. 
+%   The bounds of the frame can be manually selected by clicking the figure
+    FRAME_ZOOM_INC = 60; %one minute
+    FRAME_SHIFT_INC = 60;
+
+    done = false;
+    cth = .25;
+    lines = [-1,-1];
+    while ~done
+        if frame_start<1 
+            frame_start = 1;
+        end
+        if frame_end>size(corrs,2) 
+            frame_end = size(corrs,2);
+        end
+        lines
+        frame_start
+        frame_end
+        corrs_frame = corrs(:, frame_start:frame_end);
+        corrs_frame(corrs_frame<cth) = 0;
+        
+        clf;
+
+        imagesc(1, size(corrs_frame,2),corrs_frame);
+        xticklabels(frame_start:100:frame_end);
+        colormap('jet');
+        hold on;
+        if lines(1)>0
+            line([lines(1), lines(1)], ylim, 'Color', 'red', 'LineWidth', 2);
+        end
+        if lines(2)>0
+            line([lines(2), lines(2)], ylim, 'Color', 'red', 'LineWidth', 2);
+        end
+        hold off;
+
+        keypress = waitforbuttonpress;
+        input = '';
+        if keypress
+            input = gcf().CurrentCharacter;
+        end
+        switch input
+            case {'w', char(30)}
+                if frame_start+FRAME_ZOOM_INC < frame_end-FRAME_ZOOM_INC
+                    frame_start = frame_start+FRAME_ZOOM_INC;
+                    frame_end = frame_end-FRAME_ZOOM_INC;
+                end
+                if lines(1) > 0 && lines(2) > 0
+                    frame_start = min(lines)+frame_start;
+                    frame_end = max(lines)+frame_start;
+                end
+                lines = [-1,-1];
+            case {'s', char(31)}
+
+                frame_start = frame_start-FRAME_ZOOM_INC;
+                frame_end = frame_end+FRAME_ZOOM_INC;
+                lines = [-1,-1];
+            case {'a', char(28)}
+                if frame_start == 1
+                    continue;
+                end
+
+                frame_start = frame_start-FRAME_SHIFT_INC;
+                frame_end = frame_end-FRAME_SHIFT_INC;
+                lines = [-1,-1];
+            case {'d', char(29)}
+                if frame_end == size(corrs,2)
+                    continue;
+                end
+                frame_start = frame_start+FRAME_SHIFT_INC;
+                frame_end = frame_end+FRAME_SHIFT_INC;
+                lines = [-1,-1];
+            case 'x'
+                done=true;
+            otherwise
+                if keypress
+                    continue;
+                end
+                [x,~] = ginput(1);
+                if lines(1) < 0
+                    lines(1) = round(x);
+                elseif lines(2) < 0
+                    lines(2) = round(x);
+                else
+                    lines = [-1,-1];
+                end
+        end
+
+    end
+end
+
+function transformedBounds = transformBounds(bounds, start, finish, zoomInc, shiftInc)
+    % Transform bounds after zooming or shifting
+    transformedBounds = bounds;
+    if bounds(1) > 0
+        transformedBounds(1) = round(interp1(linspace(1, size(start:zoomInc:finish, 2), size(start:zoomInc:finish, 2)), start:zoomInc:finish, bounds(1), 'linear', 'extrap'));
+    end
+    if bounds(2) > 0
+        transformedBounds(2) = round(interp1(linspace(1, size(start:zoomInc:finish, 2), size(start:zoomInc:finish, 2)), start:zoomInc:finish, bounds(2), 'linear', 'extrap'));
+    end
+end
