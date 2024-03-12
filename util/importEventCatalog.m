@@ -12,9 +12,9 @@ hr = event_catalog.Hour;
 min = event_catalog.Minute;
 sec = event_catalog.Second;
 datetimes = datetime(years, months, days, hr, min, sec);
-extra_cols = event_catalog(:, 7:end);
+event_codes = event_catalog.Event_Code;
 
-var_names = ['DateTime', extra_cols.Properties.VariableNames];
+var_names = {'DateTime', 'EventCode'};
 
-data_out=table(datetimes, extra_cols,'VariableNames',var_names);
+data_out=table(datetimes, event_codes,'VariableNames',var_names);
 end

@@ -1,4 +1,4 @@
-function [frame_start,frame_end] = DisplayFrame(corrs,frame_start, frame_end)
+function [frame_start,frame_end, fig] = DisplayFrame(corrs,frame_start, frame_end)
 %DisplayFrame Displays a correlogram within a certain frame.
 %   The frame can be shifted left or right, and can be zoomed in or out. 
 %   The bounds of the frame can be manually selected by clicking the figure
@@ -15,16 +15,14 @@ function [frame_start,frame_end] = DisplayFrame(corrs,frame_start, frame_end)
         if frame_end>size(corrs,2) 
             frame_end = size(corrs,2);
         end
-        lines
-        frame_start
-        frame_end
+
         corrs_frame = corrs(:, frame_start:frame_end);
         corrs_frame(corrs_frame<cth) = 0;
         
         clf;
 
-        imagesc(1, size(corrs_frame,2),corrs_frame);
-        xticklabels(frame_start:100:frame_end);
+        fig = imagesc(1, size(corrs_frame,2),corrs_frame);
+        xticklabels(frame_start+100:100:frame_end+100);
         colormap('jet');
         hold on;
         if lines(1)>0
@@ -42,13 +40,14 @@ function [frame_start,frame_end] = DisplayFrame(corrs,frame_start, frame_end)
         end
         switch input
             case {'w', char(30)}
-                if frame_start+FRAME_ZOOM_INC < frame_end-FRAME_ZOOM_INC
+
+                if lines(1) > 0 && lines(2) > 0
+                    base=frame_start;
+                    frame_start = min(lines)+base;
+                    frame_end = max(lines)+base;
+                elseif frame_start+FRAME_ZOOM_INC < frame_end-FRAME_ZOOM_INC
                     frame_start = frame_start+FRAME_ZOOM_INC;
                     frame_end = frame_end-FRAME_ZOOM_INC;
-                end
-                if lines(1) > 0 && lines(2) > 0
-                    frame_start = min(lines)+frame_start;
-                    frame_end = max(lines)+frame_start;
                 end
                 lines = [-1,-1];
             case {'s', char(31)}
@@ -87,16 +86,5 @@ function [frame_start,frame_end] = DisplayFrame(corrs,frame_start, frame_end)
                 end
         end
 
-    end
-end
-
-function transformedBounds = transformBounds(bounds, start, finish, zoomInc, shiftInc)
-    % Transform bounds after zooming or shifting
-    transformedBounds = bounds;
-    if bounds(1) > 0
-        transformedBounds(1) = round(interp1(linspace(1, size(start:zoomInc:finish, 2), size(start:zoomInc:finish, 2)), start:zoomInc:finish, bounds(1), 'linear', 'extrap'));
-    end
-    if bounds(2) > 0
-        transformedBounds(2) = round(interp1(linspace(1, size(start:zoomInc:finish, 2), size(start:zoomInc:finish, 2)), start:zoomInc:finish, bounds(2), 'linear', 'extrap'));
     end
 end
